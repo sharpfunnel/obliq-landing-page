@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Codename Obliq — Landing Page
+
+Lead-generation landing page for Codename Obliq, a commercial project by Today Group & Jindal Group in Airoli, Navi Mumbai. Built with Next.js (App Router), Tailwind CSS, and Prisma + PostgreSQL (Neon).
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env` and fill in your own values:
 
-## Learn More
+- `DATABASE_URL` — PostgreSQL connection string (Neon).
+- `NEXT_PUBLIC_CONTACT_NAME` / `NEXT_PUBLIC_CONTACT_PHONE` — shown in the header, footer and sticky CTA.
 
-To learn more about Next.js, take a look at the following resources:
+## Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Schema lives in `prisma/schema.prisma` (single `Lead` model). To push schema changes to the database:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run db:push
+```
 
-## Deploy on Vercel
+## Lead Flow
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Hero form (`src/components/LeadForm.tsx`) collects Full Name + Mobile Number, validated with `zod` (`src/lib/validation.ts`), and posts to `POST /api/leads`.
+2. On success, the visitor is redirected to `/thank-you?leadId=...`.
+3. The thank-you page shows a confirmation and an optional secondary form (Configuration, Email, Budget, Message) that updates the same lead via `PATCH /api/leads/[id]`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Assets
+
+Source renders/creatives live in `temp/` (not committed — see `.gitignore`). `scripts/optimize-images.mjs` resizes and converts the ones used on the site into `public/images/*.webp`. Re-run it with `npm run optimize-images` if the source assets change.

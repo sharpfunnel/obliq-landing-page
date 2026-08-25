@@ -10,17 +10,35 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Brand theme: deep navy + warm gold */
+  --color-navy-50: #eef2f8;
+  --color-navy-100: #dce4f1;
+  --color-navy-200: #b9c8e3;
+  --color-navy-300: #93a8ce;
+  --color-navy-400: #6883b0;
+  --color-navy-500: #4a6390;
+  --color-navy-600: #374c71;
+  --color-navy-700: #283a56;
+  --color-navy-800: #1b2740;
+  --color-navy-900: #101a2c;
+  --color-navy-950: #080d18;
+
+  --color-gold-50: #fbf3e1;
+  --color-gold-100: #f5e3be;
+  --color-gold-200: #ebcb8b;
+  --color-gold-300: #dfae5c;
+  --color-gold-400: #d19a47;
+  --color-gold-500: #bd8330;
+  --color-gold-600: #9c6b24;
+  --color-gold-700: #7c551d;
+  --color-gold-800: #5e3f16;
+  --color-gold-900: #402b0f;
+  --color-gold-950: #241804;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
