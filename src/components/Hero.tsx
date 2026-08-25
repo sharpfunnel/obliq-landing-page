@@ -49,7 +49,7 @@ export default function Hero() {
         </div>
 
         <div className="flex justify-center lg:justify-end">
-          <LeadForm variant="hero" />
+          <LeadForm variant="hero" formId="hero-form" source="hero-form" />
         </div>
       </div>
     </section>

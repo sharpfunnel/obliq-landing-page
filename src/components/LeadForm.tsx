@@ -4,6 +4,9 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Send } from "lucide-react";
 import { leadFormSchema } from "@/lib/validation";
+import { getTrackingInit, trackError } from "@/lib/tracking/track";
+import { useFormTracking } from "@/lib/tracking/hooks";
+import { trackPixelLead } from "@/lib/meta/pixel";
 
 type FieldErrors = Partial<Record<"fullName" | "mobileNumber", string>>;
 
@@ -11,10 +14,14 @@ export default function LeadForm({
   variant = "hero",
   heading,
   subheading,
+  formId = "lead-form",
+  source,
 }: {
   variant?: "hero" | "inline";
   heading?: string;
   subheading?: string;
+  formId?: string;
+  source?: string;
 }) {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
@@ -22,6 +29,8 @@ export default function LeadForm({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const tracking = useFormTracking(formId);
+  const { ref: formTrackingRef } = tracking;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -34,6 +43,8 @@ export default function LeadForm({
         fullName: fieldErrors.fullName?.[0],
         mobileNumber: fieldErrors.mobileNumber?.[0],
       });
+      if (fieldErrors.fullName?.[0]) tracking.onValidationError("fullName", fieldErrors.fullName[0]);
+      if (fieldErrors.mobileNumber?.[0]) tracking.onValidationError("mobileNumber", fieldErrors.mobileNumber[0]);
       return;
     }
     setErrors({});
@@ -43,16 +54,29 @@ export default function LeadForm({
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
+        body: JSON.stringify({
+          ...parsed.data,
+          formId,
+          source: source ?? formId,
+          init: getTrackingInit(),
+        }),
       });
 
       if (!res.ok) {
-        throw new Error("Request failed");
+        throw new Error(`Request failed with status ${res.status}`);
       }
 
-      const data = (await res.json()) as { id: string };
-      router.push(`/thank-you?leadId=${data.id}`);
-    } catch {
+      const data = (await res.json()) as { leadId: string };
+      tracking.onSubmitted();
+      trackPixelLead(data.leadId);
+      router.push(`/thank-you?leadId=${data.leadId}`);
+    } catch (error) {
+      console.error("Lead submission failed:", error);
+      trackError({
+        type: "lead_submit",
+        message: error instanceof Error ? error.message : "Unknown lead submission error",
+        path: location.pathname,
+      });
       setFormError("Something went wrong. Please try again or call us directly.");
       setSubmitting(false);
     }
@@ -62,6 +86,7 @@ export default function LeadForm({
 
   return (
     <div
+      ref={formTrackingRef as React.RefObject<HTMLDivElement>}
       className={
         isHero
           ? "w-full max-w-md rounded-2xl border border-white/10 bg-navy-900/70 p-6 shadow-2xl backdrop-blur-md sm:p-8"
@@ -83,6 +108,8 @@ export default function LeadForm({
             autoComplete="name"
             placeholder="Full Name*"
             value={fullName}
+            onFocus={() => tracking.onFieldFocus("fullName")}
+            onBlur={() => fullName.trim() && tracking.onFieldComplete("fullName")}
             onChange={(e) => setFullName(e.target.value)}
             className={`w-full rounded-lg border px-4 py-3 text-[15px] outline-none transition focus:ring-2 ${
               isHero
@@ -101,6 +128,8 @@ export default function LeadForm({
             autoComplete="tel"
             placeholder="Mobile Number*"
             value={mobileNumber}
+            onFocus={() => tracking.onFieldFocus("mobileNumber")}
+            onBlur={() => mobileNumber.trim() && tracking.onFieldComplete("mobileNumber")}
             onChange={(e) => setMobileNumber(e.target.value)}
             className={`w-full rounded-lg border px-4 py-3 text-[15px] outline-none transition focus:ring-2 ${
               isHero

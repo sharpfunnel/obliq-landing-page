@@ -1,7 +1,12 @@
+"use client";
+
 import { Phone } from "lucide-react";
 import { SITE } from "@/lib/content";
+import { useCtaTracking } from "@/lib/tracking/hooks";
 
 export default function Header() {
+  const { ref: ctaRef, onMouseEnter: onCtaMouseEnter, onClick: onCtaClick } = useCtaTracking("header-call");
+
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-navy-950/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -13,7 +18,10 @@ export default function Header() {
         </div>
 
         <a
+          ref={ctaRef as React.RefObject<HTMLAnchorElement>}
           href={`tel:${SITE.contactPhone}`}
+          onMouseEnter={onCtaMouseEnter}
+          onClick={onCtaClick}
           className="flex items-center gap-2 rounded-full bg-gold-500 px-4 py-2 text-sm font-semibold text-navy-950 transition hover:bg-gold-400 sm:px-5"
         >
           <Phone className="h-4 w-4" />
