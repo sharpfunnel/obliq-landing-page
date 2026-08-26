@@ -1,5 +1,6 @@
-import { Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { PAYMENT_PLANS } from "@/lib/content";
+import CtaLink from "./CtaLink";
 
 export default function PaymentPlans() {
   return (
@@ -59,6 +60,16 @@ export default function PaymentPlans() {
           *Pricing is indicative and subject to change without prior notice. Terms and conditions
           apply.
         </p>
+
+        <div className="mt-8 flex justify-center">
+          <CtaLink
+            ctaId="pricing-cta"
+            href="#mid-cta-form"
+            className="inline-flex items-center gap-2 rounded-lg bg-gold-500 px-6 py-3 text-sm font-semibold text-navy-950 transition hover:bg-gold-400"
+          >
+            Get Price + Floor Plan <ArrowRight className="h-4 w-4" />
+          </CtaLink>
+        </div>
       </div>
     </section>
   );

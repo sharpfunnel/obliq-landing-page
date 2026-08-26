@@ -11,12 +11,15 @@ const TABS = [
   { href: "/admin/leads", label: "Leads" },
   { href: "/admin/sessions", label: "Sessions" },
   { href: "/admin/heatmap", label: "Heatmap" },
+  { href: "/admin/tech-stack", label: "Tech Stack" },
   { href: "/admin/campaigns", label: "Campaigns" },
+  { href: "/admin/meta-capi", label: "Meta CAPI" },
   { href: "/admin/funnels", label: "Funnels" },
   { href: "/admin/ctas", label: "CTAs" },
   { href: "/admin/forms", label: "Forms" },
   { href: "/admin/performance", label: "Performance" },
   { href: "/admin/errors", label: "Errors" },
+  { href: "/admin/telegram", label: "Telegram" },
   { href: "/admin/reports", label: "Reports" },
 ];
 

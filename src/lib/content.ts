@@ -26,8 +26,8 @@ export const PAYMENT_PLANS = [
     name: "Construction Linked Plan",
     code: "CLP",
     price: "₹9,500 / sq.ft",
-    detail: "30:70 Flexi Payment Plan",
-    points: ["Pay 30% now, 70% linked to construction milestones", "Lower upfront commitment", "Ideal for end-users"],
+    detail: "25:70 Flexi Payment Plan",
+    points: ["Pay 25% now, 70% linked to construction milestones", "Lower upfront commitment", "Ideal for end-users"],
     highlighted: false,
   },
   {
@@ -93,7 +93,7 @@ export const FAQS = [
   },
   {
     q: "What are the payment plan options?",
-    a: "You can choose the Construction Linked Plan (30:70) at ₹9,500 PSF, or the Special Down Payment offer at ₹6,500 PSF for maximum savings.",
+    a: "You can choose the Construction Linked Plan (25:70) at ₹9,500 PSF, or the Special Down Payment offer at ₹6,500 PSF for maximum savings.",
   },
   {
     q: "How far is the project from Airoli station?",

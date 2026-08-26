@@ -3,6 +3,8 @@ import { z } from "zod";
 // Indian mobile number: optional +91 / 91 prefix, then a 10-digit number starting 6-9.
 const mobileRegex = /^(?:\+91|91)?[6-9]\d{9}$/;
 
+export const INTERESTED_IN_OPTIONS = ["Office", "Retail", "Investment"] as const;
+
 export const leadFormSchema = z.object({
   fullName: z
     .string()
@@ -14,6 +16,7 @@ export const leadFormSchema = z.object({
     .string()
     .trim()
     .regex(mobileRegex, "Enter a valid 10-digit mobile number"),
+  interestedIn: z.enum(INTERESTED_IN_OPTIONS, { message: "Please select what you're interested in" }),
 });
 
 export type LeadFormValues = z.infer<typeof leadFormSchema>;

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
+import { resolveSecrets, SETTING_KEYS } from "@/lib/settings";
 import {
   buildLeadEventBody,
   buildManualEventBody,
@@ -11,6 +12,19 @@ import {
 
 const DEFAULT_COUNTRY_CODE = "91"; // India
 
+async function resolveCapiCredentials() {
+  const values = await resolveSecrets([
+    { key: SETTING_KEYS.metaPixelId, envVarName: "META_PIXEL_ID" },
+    { key: SETTING_KEYS.metaCapiAccessToken, envVarName: "META_CAPI_ACCESS_TOKEN" },
+    { key: SETTING_KEYS.metaCapiTestEventCode, envVarName: "META_CAPI_TEST_EVENT_CODE" },
+  ]);
+  return {
+    pixelId: values[SETTING_KEYS.metaPixelId],
+    accessToken: values[SETTING_KEYS.metaCapiAccessToken],
+    testEventCode: values[SETTING_KEYS.metaCapiTestEventCode],
+  };
+}
+
 /**
  * Sends a server-side "Lead" event for a newly created Lead row.
  *
@@ -19,14 +33,14 @@ const DEFAULT_COUNTRY_CODE = "91"; // India
  * this fire-and-forget; every failure path records itself on the row instead.
  */
 export async function sendLeadConversionEvent(lead: LeadWithSession) {
-  const pixelId = process.env.META_PIXEL_ID;
-  const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
+  const { pixelId, accessToken, testEventCode } = await resolveCapiCredentials();
   if (!pixelId || !accessToken) return;
 
   try {
     const body = buildLeadEventBody(lead, accessToken, {
       defaultCountryCode: DEFAULT_COUNTRY_CODE,
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+      testEventCode,
     });
 
     const res = await fetch(eventsEndpoint(pixelId), {
@@ -99,8 +113,7 @@ export async function sendManualConversionEvent(
   });
   if (!lead) return { ok: false, error: "Lead not found" };
 
-  const pixelId = process.env.META_PIXEL_ID;
-  const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
+  const { pixelId, accessToken, testEventCode } = await resolveCapiCredentials();
 
   if ((!pixelId || !accessToken) && process.env.NODE_ENV !== "production") {
     // Lets the send UI be reviewed before real Meta credentials exist. Never
@@ -122,6 +135,7 @@ export async function sendManualConversionEvent(
       value: options.value,
       currency: options.currency,
       eventId,
+      testEventCode,
     });
 
     const res = await fetch(eventsEndpoint(pixelId), {

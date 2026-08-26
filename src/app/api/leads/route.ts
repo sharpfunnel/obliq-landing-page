@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { leadFormSchema } from "@/lib/validation";
 import { upsertVisitorAndSession } from "@/lib/tracking/server";
 import { sendLeadConversionEvent } from "@/lib/meta/capi";
+import { notifyTelegramNewLead } from "@/lib/telegram";
 import { runBackground } from "@/lib/runtime/background";
 import type { TrackInitPayload } from "@/lib/tracking/types";
 
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
       data: {
         fullName: parsed.data.fullName,
         mobileNumber: parsed.data.mobileNumber,
+        interestedIn: parsed.data.interestedIn,
         visitorId,
         sessionId,
         formId: typeof body.formId === "string" ? body.formId : undefined,
@@ -57,6 +59,8 @@ export async function POST(request: NextRequest) {
             ipAddress: true,
             userAgent: true,
             entryPath: true,
+            utmSource: true,
+            utmCampaign: true,
           },
         },
         visitor: { select: { city: true, region: true, country: true } },
@@ -64,6 +68,21 @@ export async function POST(request: NextRequest) {
     });
 
     runBackground(sendLeadConversionEvent(lead));
+    runBackground(
+      notifyTelegramNewLead({
+        fullName: lead.fullName,
+        mobileNumber: lead.mobileNumber,
+        source: lead.source,
+        interestedIn: lead.interestedIn,
+        configuration: lead.configuration,
+        budget: lead.budget,
+        message: lead.message,
+        city: lead.visitor?.city,
+        country: lead.visitor?.country,
+        utmSource: lead.session?.utmSource,
+        utmCampaign: lead.session?.utmCampaign,
+      })
+    );
 
     return NextResponse.json({ leadId: lead.id }, { status: 201 });
   } catch (error) {

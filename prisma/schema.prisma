@@ -11,24 +11,27 @@ datasource db {
 }
 
 model Visitor {
-  id             String   @id @default(cuid())
-  fingerprint    String   @unique
-  firstSeenAt    DateTime @default(now())
-  lastSeenAt     DateTime @updatedAt
-  isReturning    Boolean  @default(false)
-  country        String?
-  region         String?
-  city           String?
-  timezone       String?
-  language       String?
-  browser        String?
-  browserVersion String?
-  os             String?
-  deviceType     String?
-  screenWidth    Int?
-  screenHeight   Int?
-  sessions       Session[]
-  leads          Lead[]
+  id                 String   @id @default(cuid())
+  fingerprint        String   @unique
+  firstSeenAt        DateTime @default(now())
+  lastSeenAt         DateTime @updatedAt
+  isReturning        Boolean  @default(false)
+  country            String?
+  region             String?
+  city               String?
+  timezone           String?
+  language           String?
+  browser            String?
+  browserVersion     String?
+  os                 String?
+  osVersion          String?
+  deviceType         String?
+  screenWidth        Int?
+  screenHeight       Int?
+  connectionType     String?
+  connectionDownlink Float?
+  sessions           Session[]
+  leads              Lead[]
 
   @@index([firstSeenAt])
   @@map("visitors")
@@ -40,6 +43,7 @@ model Session {
   visitorId      String
   visitor        Visitor   @relation(fields: [visitorId], references: [id])
   startedAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   endedAt        DateTime?
   totalDuration  Int?
   isBounce       Boolean   @default(true)
@@ -244,6 +248,7 @@ model Lead {
   formId        String?
   fullName      String
   mobileNumber  String
+  interestedIn  String? // Office | Retail | Investment
   configuration String?
   email         String?
   budget        String?
@@ -376,4 +381,14 @@ model MetaInsight {
   @@index([adSetId, date])
   @@index([adId, date])
   @@map("meta_insights")
+}
+
+// --- Admin-editable settings (Meta CAPI / Telegram credentials, etc.) ---
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
 }

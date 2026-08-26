@@ -4,13 +4,23 @@ import PageHeader from "@/components/admin/PageHeader";
 import StatTile from "@/components/admin/StatTile";
 import ConversionFunnel from "@/components/admin/ConversionFunnel";
 import TimeSeriesChart from "@/components/admin/TimeSeriesChart";
+import RangeSwitcher from "@/components/admin/RangeSwitcher";
+import LiveIndicator from "@/components/admin/LiveIndicator";
+import WorldMapDots from "@/components/admin/WorldMapDots";
+import TopCountries from "@/components/admin/TopCountries";
+import DonutChart from "@/components/admin/DonutChart";
+import BarBreakdown from "@/components/admin/BarBreakdown";
 import { Table, Thead, Th, Tr, Td, EmptyState } from "@/components/admin/Table";
+import { rangeToDays } from "@/lib/admin/constants";
 import {
   getDailyTimeSeries,
   getFunnelStats,
+  getLiveVisitorCount,
+  getOverviewBreakdowns,
   getOverviewStats,
   getRecentLeads,
   getTrafficSources,
+  getVisitorsByCountry,
 } from "@/lib/admin/queries";
 
 export const dynamic = "force-dynamic";
@@ -26,18 +36,37 @@ function fmtDuration(seconds: number) {
   return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
-export default async function AdminOverviewPage() {
-  const [stats, series, sources, funnel, recentLeads] = await Promise.all([
-    getOverviewStats(30),
-    getDailyTimeSeries(30),
-    getTrafficSources(30),
-    getFunnelStats(30),
+export default async function AdminOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
+  const { range } = await searchParams;
+  const days = rangeToDays(range);
+
+  const [stats, series, sources, funnel, recentLeads, liveCount, countries, breakdowns] = await Promise.all([
+    getOverviewStats(days),
+    getDailyTimeSeries(days),
+    getTrafficSources(days),
+    getFunnelStats(days),
     getRecentLeads(6),
+    getLiveVisitorCount(),
+    getVisitorsByCountry(days),
+    getOverviewBreakdowns(days),
   ]);
 
   return (
     <div>
-      <PageHeader title="Overview" description="Last 30 days" />
+      <PageHeader
+        title="Overview"
+        description={`Last ${days} days, compared with the ${days} days before.`}
+        actions={
+          <>
+            <LiveIndicator initialCount={liveCount} />
+            <RangeSwitcher basePath="/admin" current={range ?? "30d"} />
+          </>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
         <StatTile icon={Users} label="Visitors" value={stats.visitors} subLabel={fmtChange(stats.visitorsChange) ?? undefined} />
@@ -63,6 +92,33 @@ export default async function AdminOverviewPage() {
         <div className="rounded-xl border border-navy-200 bg-white p-4">
           <h2 className="mb-4 text-sm font-bold text-navy-900">Conversion Funnel</h2>
           <ConversionFunnel stages={funnel.stages} />
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <div className="rounded-xl border border-navy-200 bg-white p-4 lg:col-span-2">
+          <h2 className="mb-4 text-sm font-bold text-navy-900">Visitors by country</h2>
+          <WorldMapDots points={countries.map((c) => ({ code: c.code, count: c.visitors }))} />
+        </div>
+
+        <div className="rounded-xl border border-navy-200 bg-white p-4">
+          <h2 className="mb-4 text-sm font-bold text-navy-900">Top countries</h2>
+          <TopCountries countries={countries} />
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+        <div className="rounded-xl border border-navy-200 bg-white p-4">
+          <h2 className="mb-3 text-sm font-bold text-navy-900">Devices</h2>
+          <DonutChart data={breakdowns.devices} size={120} />
+        </div>
+        <div className="rounded-xl border border-navy-200 bg-white p-4">
+          <h2 className="mb-3 text-sm font-bold text-navy-900">Browsers</h2>
+          <BarBreakdown data={breakdowns.browsers} />
+        </div>
+        <div className="rounded-xl border border-navy-200 bg-white p-4">
+          <h2 className="mb-3 text-sm font-bold text-navy-900">Top pages</h2>
+          <BarBreakdown data={breakdowns.pages} />
         </div>
       </div>
 

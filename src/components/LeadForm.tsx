@@ -3,12 +3,12 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Send } from "lucide-react";
-import { leadFormSchema } from "@/lib/validation";
+import { INTERESTED_IN_OPTIONS, leadFormSchema } from "@/lib/validation";
 import { getTrackingInit, trackError } from "@/lib/tracking/track";
 import { useFormTracking } from "@/lib/tracking/hooks";
 import { trackPixelLead } from "@/lib/meta/pixel";
 
-type FieldErrors = Partial<Record<"fullName" | "mobileNumber", string>>;
+type FieldErrors = Partial<Record<"fullName" | "mobileNumber" | "interestedIn", string>>;
 
 export default function LeadForm({
   variant = "hero",
@@ -26,6 +26,7 @@ export default function LeadForm({
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
+  const [interestedIn, setInterestedIn] = useState<(typeof INTERESTED_IN_OPTIONS)[number] | "">("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -36,15 +37,17 @@ export default function LeadForm({
     e.preventDefault();
     setFormError(null);
 
-    const parsed = leadFormSchema.safeParse({ fullName, mobileNumber });
+    const parsed = leadFormSchema.safeParse({ fullName, mobileNumber, interestedIn });
     if (!parsed.success) {
       const fieldErrors = parsed.error.flatten().fieldErrors;
       setErrors({
         fullName: fieldErrors.fullName?.[0],
         mobileNumber: fieldErrors.mobileNumber?.[0],
+        interestedIn: fieldErrors.interestedIn?.[0],
       });
       if (fieldErrors.fullName?.[0]) tracking.onValidationError("fullName", fieldErrors.fullName[0]);
       if (fieldErrors.mobileNumber?.[0]) tracking.onValidationError("mobileNumber", fieldErrors.mobileNumber[0]);
+      if (fieldErrors.interestedIn?.[0]) tracking.onValidationError("interestedIn", fieldErrors.interestedIn[0]);
       return;
     }
     setErrors({});
@@ -86,6 +89,7 @@ export default function LeadForm({
 
   return (
     <div
+      id={formId}
       ref={formTrackingRef as React.RefObject<HTMLDivElement>}
       className={
         isHero
@@ -141,6 +145,38 @@ export default function LeadForm({
           {errors.mobileNumber && <p className="mt-1 text-xs text-red-400">{errors.mobileNumber}</p>}
         </div>
 
+        <div>
+          <p className={isHero ? "mb-2 text-xs font-medium text-navy-300" : "mb-2 text-xs font-medium text-navy-600"}>
+            Interested In*
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {INTERESTED_IN_OPTIONS.map((option) => {
+              const selected = interestedIn === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => {
+                    setInterestedIn(option);
+                    tracking.onFieldComplete("interestedIn");
+                  }}
+                  onFocus={() => tracking.onFieldFocus("interestedIn")}
+                  className={`rounded-lg border px-2 py-2.5 text-sm font-semibold transition ${
+                    selected
+                      ? "border-gold-500 bg-gold-500 text-navy-950"
+                      : isHero
+                        ? "border-white/10 bg-navy-800/80 text-navy-200 hover:border-gold-500/50"
+                        : "border-navy-300 bg-white text-navy-700 hover:border-gold-500/50"
+                  }`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+          {errors.interestedIn && <p className="mt-1 text-xs text-red-400">{errors.interestedIn}</p>}
+        </div>
+
         {formError && <p className="text-sm text-red-400">{formError}</p>}
 
         <button
@@ -154,7 +190,7 @@ export default function LeadForm({
             </>
           ) : (
             <>
-              <Send className="h-4 w-4" /> Submit Enquiry
+              <Send className="h-4 w-4" /> Get Price + Floor Plan
             </>
           )}
         </button>

@@ -1,5 +1,6 @@
-import { Briefcase, Building, Store } from "lucide-react";
+import { ArrowRight, Briefcase, Building, Store } from "lucide-react";
 import { CONFIGURATIONS } from "@/lib/content";
+import CtaLink from "./CtaLink";
 
 const ICONS = [Briefcase, Building, Store];
 
@@ -26,6 +27,16 @@ export default function Configurations() {
               </div>
             );
           })}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <CtaLink
+            ctaId="configurations-cta"
+            href="#mid-cta-form"
+            className="inline-flex items-center gap-2 rounded-lg bg-gold-500 px-6 py-3 text-sm font-semibold text-navy-950 transition hover:bg-gold-400"
+          >
+            Check Availability <ArrowRight className="h-4 w-4" />
+          </CtaLink>
         </div>
       </div>
     </section>

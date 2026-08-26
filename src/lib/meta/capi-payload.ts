@@ -115,7 +115,7 @@ export function buildLeadUserData(lead: LeadWithSession, defaultCountryCode: str
 export function buildLeadEventBody(
   lead: LeadWithSession,
   accessToken: string,
-  opts: { defaultCountryCode: string; siteUrl?: string }
+  opts: { defaultCountryCode: string; siteUrl?: string; testEventCode?: string | null }
 ) {
   const userData = buildLeadUserData(lead, opts.defaultCountryCode);
 
@@ -139,8 +139,8 @@ export function buildLeadEventBody(
     access_token: accessToken,
   };
 
-  if (process.env.META_CAPI_TEST_EVENT_CODE) {
-    body.test_event_code = process.env.META_CAPI_TEST_EVENT_CODE;
+  if (opts.testEventCode) {
+    body.test_event_code = opts.testEventCode;
   }
 
   return body;
@@ -156,6 +156,7 @@ export function buildManualEventBody(
     value?: number;
     currency?: string;
     eventId?: string;
+    testEventCode?: string | null;
   }
 ) {
   const userData = buildLeadUserData(lead, opts.defaultCountryCode);
@@ -181,8 +182,8 @@ export function buildManualEventBody(
     access_token: accessToken,
   };
 
-  if (process.env.META_CAPI_TEST_EVENT_CODE) {
-    body.test_event_code = process.env.META_CAPI_TEST_EVENT_CODE;
+  if (opts.testEventCode) {
+    body.test_event_code = opts.testEventCode;
   }
 
   return body;

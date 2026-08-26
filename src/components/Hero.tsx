@@ -1,9 +1,11 @@
 import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 import LeadForm from "./LeadForm";
-import { SITE } from "@/lib/content";
+import { PAYMENT_PLANS, SITE } from "@/lib/content";
 
 export default function Hero() {
+  const startingPrice = PAYMENT_PLANS.find((plan) => plan.highlighted)?.price;
+
   return (
     <section className="relative isolate overflow-hidden bg-navy-950">
       <Image
@@ -27,6 +29,12 @@ export default function Hero() {
           </h1>
           <p className="mt-2 text-lg font-medium text-gold-300 sm:text-xl">{SITE.tagline}</p>
 
+          {startingPrice && (
+            <p className="mt-4 text-2xl font-extrabold text-white sm:text-3xl">
+              Starting at <span className="text-gold-400">{startingPrice}*</span>
+            </p>
+          )}
+
           <p className="mt-5 max-w-xl text-base text-navy-300 sm:text-lg">
             A landmark commercial development by {SITE.developer} &amp; {SITE.coDeveloper} on the
             Airoli-Mulund Link Road — corporate offices, professional suites and retail spaces
@@ -35,10 +43,10 @@ export default function Hero() {
 
           <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {[
-              "Prime frontage on Thane-Belapur Road",
+              "Direct access — Airoli-Mulund Link Road",
               "4 mins drive from Airoli Station",
               "CC Received — construction is live",
-              "Flexible 30:70 payment plan",
+              "Flexible 25:70 payment plan",
             ].map((item) => (
               <li key={item} className="flex items-start gap-2 text-sm text-navy-200">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold-400" />

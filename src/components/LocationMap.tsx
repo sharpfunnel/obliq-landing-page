@@ -1,5 +1,6 @@
-import { ExternalLink, MapPin } from "lucide-react";
+import { ArrowRight, ExternalLink, MapPin } from "lucide-react";
 import { SITE } from "@/lib/content";
+import CtaLink from "./CtaLink";
 
 const NEARBY = [
   "Airoli Railway Station — 4 mins",
@@ -38,6 +39,16 @@ export default function LocationMap() {
             >
               Open in Google Maps <ExternalLink className="h-4 w-4" />
             </a>
+
+            <div className="mt-6">
+              <CtaLink
+                ctaId="location-cta"
+                href="#mid-cta-form"
+                className="inline-flex items-center gap-2 rounded-lg bg-gold-500 px-6 py-3 text-sm font-semibold text-navy-950 transition hover:bg-gold-400"
+              >
+                Book Free Site Visit <ArrowRight className="h-4 w-4" />
+              </CtaLink>
+            </div>
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-navy-200 shadow-sm lg:col-span-3">

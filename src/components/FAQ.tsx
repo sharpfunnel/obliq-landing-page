@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { FAQS } from "@/lib/content";
+import CtaLink from "./CtaLink";
 
 export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -36,6 +37,16 @@ export default function FAQ() {
               </div>
             );
           })}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <CtaLink
+            ctaId="faq-cta"
+            href="#mid-cta-form"
+            className="inline-flex items-center gap-2 rounded-lg bg-gold-500 px-6 py-3 text-sm font-semibold text-navy-950 transition hover:bg-gold-400"
+          >
+            Get Project Details <ArrowRight className="h-4 w-4" />
+          </CtaLink>
         </div>
       </div>
     </section>

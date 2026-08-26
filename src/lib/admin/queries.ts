@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 
 function daysAgo(days: number): Date {
   const d = new Date();
@@ -135,6 +136,72 @@ export async function getTrafficSources(days = 30) {
   return Array.from(map.values()).sort((a, b) => b.sessions - a.sessions);
 }
 
+export async function getLiveVisitorCount(): Promise<number> {
+  const since = new Date(Date.now() - 90_000);
+  return prisma.session.count({ where: { endedAt: null, updatedAt: { gte: since } } });
+}
+
+export async function getVisitorsByCountry(days = 30) {
+  const since = daysAgo(days);
+
+  const [visitorRows, leadRows] = await Promise.all([
+    prisma.visitor.groupBy({
+      by: ["country"],
+      where: { firstSeenAt: { gte: since } },
+      _count: { country: true },
+    }),
+    prisma.lead.findMany({
+      where: { createdAt: { gte: since } },
+      select: { visitor: { select: { country: true } } },
+    }),
+  ]);
+
+  const leadCounts = new Map<string, number>();
+  for (const lead of leadRows) {
+    const code = lead.visitor?.country ?? "UNKNOWN";
+    leadCounts.set(code, (leadCounts.get(code) ?? 0) + 1);
+  }
+
+  return visitorRows
+    .map((row) => {
+      const code = row.country ?? "UNKNOWN";
+      return { code, visitors: row._count.country, leads: leadCounts.get(code) ?? 0 };
+    })
+    .sort((a, b) => b.visitors - a.visitors);
+}
+
+export async function getOverviewBreakdowns(days = 30) {
+  const since = daysAgo(days);
+
+  const [deviceRows, browserRows, pageRows] = await Promise.all([
+    prisma.visitor.groupBy({
+      by: ["deviceType"],
+      where: { firstSeenAt: { gte: since }, deviceType: { not: null } },
+      _count: { deviceType: true },
+    }),
+    prisma.visitor.groupBy({
+      by: ["browser"],
+      where: { firstSeenAt: { gte: since }, browser: { not: null } },
+      _count: { browser: true },
+      orderBy: { _count: { browser: "desc" } },
+      take: 5,
+    }),
+    prisma.pageView.groupBy({
+      by: ["path"],
+      where: { enteredAt: { gte: since } },
+      _count: { path: true },
+      orderBy: { _count: { path: "desc" } },
+      take: 5,
+    }),
+  ]);
+
+  return {
+    devices: deviceRows.map((r) => ({ label: r.deviceType as string, count: r._count.deviceType })),
+    browsers: browserRows.map((r) => ({ label: r.browser as string, count: r._count.browser })),
+    pages: pageRows.map((r) => ({ label: r.path, count: r._count.path })),
+  };
+}
+
 export async function getRecentLeads(limit = 5) {
   return prisma.lead.findMany({
     orderBy: { createdAt: "desc" },
@@ -151,15 +218,56 @@ export async function getRecentLeads(limit = 5) {
   });
 }
 
-export async function getLeads(status?: string) {
+export async function getLeadFilterOptions() {
+  const [sources, countries, devices] = await Promise.all([
+    prisma.session.findMany({ where: { utmSource: { not: null } }, distinct: ["utmSource"], select: { utmSource: true } }),
+    prisma.visitor.findMany({ where: { country: { not: null } }, distinct: ["country"], select: { country: true } }),
+    prisma.visitor.findMany({ where: { deviceType: { not: null } }, distinct: ["deviceType"], select: { deviceType: true } }),
+  ]);
+  return {
+    sources: sources.map((s) => s.utmSource as string).sort(),
+    countries: countries.map((c) => c.country as string).sort(),
+    devices: devices.map((d) => d.deviceType as string).sort(),
+  };
+}
+
+export type LeadFilters = {
+  status?: string;
+  search?: string;
+  source?: string;
+  country?: string;
+  device?: string;
+};
+
+export async function getLeads(filters: LeadFilters = {}) {
+  const { status, search, source, country, device } = filters;
+
+  const and: Prisma.LeadWhereInput[] = [];
+  if (status && status !== "all") and.push({ status });
+  if (search) {
+    and.push({
+      OR: [
+        { fullName: { contains: search, mode: "insensitive" } },
+        { mobileNumber: { contains: search } },
+        { email: { contains: search, mode: "insensitive" } },
+      ],
+    });
+  }
+  if (source && source !== "all") {
+    and.push({ OR: [{ session: { utmSource: source } }, { AND: [{ session: null }, { source }] }] });
+  }
+  if (country && country !== "all") and.push({ visitor: { country } });
+  if (device && device !== "all") and.push({ visitor: { deviceType: device } });
+
   return prisma.lead.findMany({
-    where: status && status !== "all" ? { status } : undefined,
+    where: and.length > 0 ? { AND: and } : undefined,
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
       fullName: true,
       mobileNumber: true,
       email: true,
+      interestedIn: true,
       configuration: true,
       budget: true,
       message: true,
@@ -185,8 +293,41 @@ export async function getLeads(status?: string) {
   });
 }
 
-export async function getSessions(limit = 100) {
+export type SessionFilters = {
+  days?: number;
+  status?: "all" | "bounced" | "engaged";
+  source?: string;
+  country?: string;
+  device?: string;
+};
+
+export async function getSessionStats(days = 30) {
+  const since = daysAgo(days);
+  const [total, converted, bounced, durationAgg] = await Promise.all([
+    prisma.session.count({ where: { startedAt: { gte: since } } }),
+    prisma.session.count({ where: { startedAt: { gte: since }, leads: { some: {} } } }),
+    prisma.session.count({ where: { startedAt: { gte: since }, isBounce: true } }),
+    prisma.session.aggregate({
+      where: { startedAt: { gte: since }, totalDuration: { not: null } },
+      _avg: { totalDuration: true },
+    }),
+  ]);
+  return { total, converted, bounced, avgDurationSeconds: Math.round(durationAgg._avg.totalDuration ?? 0) };
+}
+
+export async function getSessions(filters: SessionFilters & { limit?: number } = {}) {
+  const { days = 30, status, source, country, device, limit = 100 } = filters;
+  const since = daysAgo(days);
+
+  const and: Prisma.SessionWhereInput[] = [{ startedAt: { gte: since } }];
+  if (status === "bounced") and.push({ isBounce: true });
+  if (status === "engaged") and.push({ isBounce: false });
+  if (source && source !== "all") and.push({ utmSource: source });
+  if (country && country !== "all") and.push({ visitor: { country } });
+  if (device && device !== "all") and.push({ visitor: { deviceType: device } });
+
   return prisma.session.findMany({
+    where: { AND: and },
     orderBy: { startedAt: "desc" },
     take: limit,
     select: {
@@ -232,6 +373,79 @@ export async function getSessionReplayMeta(sessionId: string) {
       replays: { orderBy: { seq: "asc" }, select: { data: true, eventCount: true } },
     },
   });
+}
+
+export async function getSessionDetail(sessionId: string) {
+  const session = await prisma.session.findUnique({
+    where: { id: sessionId },
+    select: {
+      id: true,
+      clientId: true,
+      startedAt: true,
+      endedAt: true,
+      totalDuration: true,
+      isBounce: true,
+      pagesViewed: true,
+      entryPath: true,
+      exitPath: true,
+      referrer: true,
+      ipAddress: true,
+      userAgent: true,
+      viewportWidth: true,
+      viewportHeight: true,
+      utmSource: true,
+      utmMedium: true,
+      utmCampaign: true,
+      utmContent: true,
+      utmTerm: true,
+      placement: true,
+      gclid: true,
+      fbclid: true,
+      metaAdId: true,
+      visitor: {
+        select: {
+          id: true,
+          fingerprint: true,
+          isReturning: true,
+          deviceType: true,
+          browser: true,
+          browserVersion: true,
+          os: true,
+          osVersion: true,
+          screenWidth: true,
+          screenHeight: true,
+          language: true,
+          timezone: true,
+          connectionType: true,
+          connectionDownlink: true,
+          city: true,
+          region: true,
+          country: true,
+        },
+      },
+      pageViews: { orderBy: { enteredAt: "asc" }, select: { path: true, enteredAt: true, timeOnPage: true } },
+      _count: { select: { replays: true } },
+    },
+  });
+  if (!session) return null;
+
+  const [scrollAgg, mouseCount, ctaClicks, formStarted, formSubmitted] = await Promise.all([
+    prisma.scrollEvent.aggregate({ where: { sessionId }, _max: { depth: true }, _avg: { depth: true } }),
+    prisma.mouseEvent.count({ where: { sessionId } }),
+    prisma.ctaEvent.count({ where: { sessionId, action: "clicked" } }),
+    prisma.formEvent.count({ where: { sessionId, action: "started" } }),
+    prisma.formEvent.count({ where: { sessionId, action: "submitted" } }),
+  ]);
+
+  return {
+    session,
+    maxScrollPct: scrollAgg._max.depth ?? 0,
+    avgScrollPct: Math.round(scrollAgg._avg.depth ?? 0),
+    mouseEventCount: mouseCount,
+    ctaClicks,
+    formStarted: formStarted > 0,
+    formSubmitted: formSubmitted > 0,
+  };
 }
 
 export async function getHeatmapPaths() {
@@ -379,6 +593,138 @@ export async function getPerformanceStats(days = 30) {
   );
 
   return results;
+}
+
+function toSlices<T extends string>(rows: Array<{ label: T | null; count: number }>, limit = 8) {
+  return rows
+    .filter((r): r is { label: T; count: number } => Boolean(r.label))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+export async function getTechStackStats(days = 30) {
+  const since = daysAgo(days);
+  const where = { firstSeenAt: { gte: since } };
+
+  const [deviceRows, browserRows, osRows, browserVersionRows, osVersionRows, resolutionRows, languageRows, connectionRows, viewportRows] =
+    await Promise.all([
+      prisma.visitor.groupBy({ by: ["deviceType"], where, _count: { deviceType: true } }),
+      prisma.visitor.groupBy({ by: ["browser"], where, _count: { browser: true } }),
+      prisma.visitor.groupBy({ by: ["os"], where, _count: { os: true } }),
+      prisma.visitor.groupBy({ by: ["browser", "browserVersion"], where, _count: { browserVersion: true } }),
+      prisma.visitor.groupBy({ by: ["os", "osVersion"], where, _count: { osVersion: true } }),
+      prisma.visitor.groupBy({ by: ["screenWidth", "screenHeight"], where, _count: { screenWidth: true } }),
+      prisma.visitor.groupBy({ by: ["language"], where, _count: { language: true } }),
+      prisma.visitor.groupBy({ by: ["connectionType"], where, _count: { connectionType: true } }),
+      prisma.session.groupBy({
+        by: ["viewportWidth", "viewportHeight"],
+        where: { startedAt: { gte: since } },
+        _count: { viewportWidth: true },
+      }),
+    ]);
+
+  const perf = await prisma.performanceMetric.findMany({
+    where: { createdAt: { gte: since }, metric: "LCP" },
+    select: { rating: true, session: { select: { visitor: { select: { browser: true, os: true } } } } },
+  });
+
+  function perfBy(key: "browser" | "os") {
+    const map = new Map<string, { label: string; good: number; total: number }>();
+    for (const row of perf) {
+      const label = row.session.visitor[key];
+      if (!label) continue;
+      const entry = map.get(label) ?? { label, good: 0, total: 0 };
+      entry.total += 1;
+      if (row.rating === "good") entry.good += 1;
+      map.set(label, entry);
+    }
+    return Array.from(map.values())
+      .map((e) => ({ ...e, goodPct: Math.round((e.good / e.total) * 100) }))
+      .sort((a, b) => b.total - a.total);
+  }
+
+  return {
+    devices: toSlices(deviceRows.map((r) => ({ label: r.deviceType, count: r._count.deviceType }))),
+    browsers: toSlices(browserRows.map((r) => ({ label: r.browser, count: r._count.browser }))),
+    os: toSlices(osRows.map((r) => ({ label: r.os, count: r._count.os }))),
+    browserVersions: toSlices(
+      browserVersionRows.map((r) => ({
+        label: r.browser && r.browserVersion ? `${r.browser} ${r.browserVersion}` : r.browser,
+        count: r._count.browserVersion,
+      }))
+    ),
+    osVersions: toSlices(
+      osVersionRows.map((r) => ({
+        label: r.os && r.osVersion ? `${r.os} ${r.osVersion}` : r.os,
+        count: r._count.osVersion,
+      }))
+    ),
+    resolutions: toSlices(
+      resolutionRows.map((r) => ({
+        label: r.screenWidth && r.screenHeight ? `${r.screenWidth}x${r.screenHeight}` : null,
+        count: r._count.screenWidth,
+      }))
+    ),
+    viewports: toSlices(
+      viewportRows.map((r) => ({
+        label: r.viewportWidth && r.viewportHeight ? `${r.viewportWidth}x${r.viewportHeight}` : null,
+        count: r._count.viewportWidth,
+      }))
+    ),
+    languages: toSlices(languageRows.map((r) => ({ label: r.language, count: r._count.language }))),
+    connections: toSlices(connectionRows.map((r) => ({ label: r.connectionType, count: r._count.connectionType }))),
+    perfByBrowser: perfBy("browser"),
+    perfByOs: perfBy("os"),
+  };
+}
+
+export async function getMetaCapiStats(days = 30) {
+  const since = daysAgo(days);
+
+  const [totalLeads, sent, failed, deliveryLog] = await Promise.all([
+    prisma.lead.count({ where: { createdAt: { gte: since } } }),
+    prisma.lead.count({ where: { createdAt: { gte: since }, metaCapiSentAt: { not: null } } }),
+    prisma.lead.count({ where: { createdAt: { gte: since }, metaCapiError: { not: null }, metaCapiSentAt: null } }),
+    prisma.lead.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 25,
+      select: {
+        id: true,
+        fullName: true,
+        createdAt: true,
+        metaCapiSentAt: true,
+        metaCapiError: true,
+      },
+    }),
+  ]);
+
+  return { totalLeads, sent, failed, deliveryLog };
+}
+
+export async function getLatestLeadForCapiPreview() {
+  return prisma.lead.findFirst({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      createdAt: true,
+      fullName: true,
+      email: true,
+      mobileNumber: true,
+      source: true,
+      session: {
+        select: {
+          startedAt: true,
+          fbclid: true,
+          fbc: true,
+          fbp: true,
+          ipAddress: true,
+          userAgent: true,
+          entryPath: true,
+        },
+      },
+      visitor: { select: { city: true, region: true, country: true } },
+    },
+  });
 }
 
 export async function getErrors(limit = 100) {

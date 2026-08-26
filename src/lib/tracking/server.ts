@@ -53,6 +53,8 @@ export async function upsertVisitor(request: Request, init: TrackInitPayload) {
         country: geo.country ?? undefined,
         region: geo.countryRegion ?? undefined,
         city: geo.city ?? undefined,
+        connectionType: device.connectionType ?? undefined,
+        connectionDownlink: device.connectionDownlink ?? undefined,
       },
       create: {
         fingerprint: init.visitorId,
@@ -65,9 +67,12 @@ export async function upsertVisitor(request: Request, init: TrackInitPayload) {
         browser: device.browser,
         browserVersion: device.browserVersion,
         os: device.os,
+        osVersion: device.osVersion,
         deviceType: device.deviceType,
         screenWidth: device.screenWidth,
         screenHeight: device.screenHeight,
+        connectionType: device.connectionType,
+        connectionDownlink: device.connectionDownlink,
       },
     });
   } catch (error) {

@@ -22,11 +22,14 @@ export type DeviceInfo = {
   browser: string | null;
   browserVersion: string | null;
   os: string | null;
+  osVersion: string | null;
   deviceType: "mobile" | "tablet" | "desktop" | null;
   screenWidth: number;
   screenHeight: number;
   language: string | null;
   timezone: string | null;
+  connectionType: string | null;
+  connectionDownlink: number | null;
 };
 
 export type TrackInitPayload = {
