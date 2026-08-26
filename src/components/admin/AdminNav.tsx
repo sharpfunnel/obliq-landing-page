@@ -13,7 +13,6 @@ const TABS = [
   { href: "/admin/heatmap", label: "Heatmap" },
   { href: "/admin/tech-stack", label: "Tech Stack" },
   { href: "/admin/campaigns", label: "Campaigns" },
-  { href: "/admin/meta-capi", label: "Meta CAPI" },
   { href: "/admin/funnels", label: "Funnels" },
   { href: "/admin/ctas", label: "CTAs" },
   { href: "/admin/forms", label: "Forms" },

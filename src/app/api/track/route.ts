@@ -162,6 +162,8 @@ export async function POST(request: Request) {
       endedAt: body.isFinal ? new Date() : undefined,
       viewportWidth: init.viewportWidth,
       viewportHeight: init.viewportHeight,
+      mouseClickCount: { increment: body.mouseClicks ?? 0 },
+      mouseMoveCount: { increment: body.mouseMoves ?? 0 },
     },
   });
 

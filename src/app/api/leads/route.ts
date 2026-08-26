@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { leadFormSchema } from "@/lib/validation";
 import { upsertVisitorAndSession } from "@/lib/tracking/server";
-import { sendLeadConversionEvent } from "@/lib/meta/capi";
 import { notifyTelegramNewLead } from "@/lib/telegram";
 import { runBackground } from "@/lib/runtime/background";
 import type { TrackInitPayload } from "@/lib/tracking/types";
@@ -52,22 +51,14 @@ export async function POST(request: NextRequest) {
       include: {
         session: {
           select: {
-            startedAt: true,
-            fbclid: true,
-            fbc: true,
-            fbp: true,
-            ipAddress: true,
-            userAgent: true,
-            entryPath: true,
             utmSource: true,
             utmCampaign: true,
           },
         },
-        visitor: { select: { city: true, region: true, country: true } },
+        visitor: { select: { city: true, country: true } },
       },
     });
 
-    runBackground(sendLeadConversionEvent(lead));
     runBackground(
       notifyTelegramNewLead({
         fullName: lead.fullName,

@@ -1,8 +1,10 @@
 import "server-only";
 
-import { graphVersion } from "./capi-payload";
-
 const GRAPH_BASE = "https://graph.facebook.com";
+
+export function graphVersion() {
+  return process.env.META_GRAPH_API_VERSION || "v21.0";
+}
 
 function requireEnv(name: string): string {
   const value = process.env[name];

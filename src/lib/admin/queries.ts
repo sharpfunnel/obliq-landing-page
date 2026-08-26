@@ -274,8 +274,6 @@ export async function getLeads(filters: LeadFilters = {}) {
       source: true,
       status: true,
       createdAt: true,
-      metaCapiSentAt: true,
-      metaCapiError: true,
       visitor: { select: { city: true, country: true, deviceType: true } },
       session: {
         select: {
@@ -326,7 +324,7 @@ export async function getSessions(filters: SessionFilters & { limit?: number } =
   if (country && country !== "all") and.push({ visitor: { country } });
   if (device && device !== "all") and.push({ visitor: { deviceType: device } });
 
-  return prisma.session.findMany({
+  const sessions = await prisma.session.findMany({
     where: { AND: and },
     orderBy: { startedAt: "desc" },
     take: limit,
@@ -343,15 +341,28 @@ export async function getSessions(filters: SessionFilters & { limit?: number } =
       referrer: true,
       utmSource: true,
       utmMedium: true,
+      utmContent: true,
       utmCampaign: true,
+      placement: true,
       ipAddress: true,
+      mouseClickCount: true,
+      mouseMoveCount: true,
       visitor: {
         select: {
+          id: true,
           fingerprint: true,
           isReturning: true,
           deviceType: true,
           browser: true,
+          browserVersion: true,
           os: true,
+          osVersion: true,
+          screenWidth: true,
+          screenHeight: true,
+          language: true,
+          timezone: true,
+          connectionType: true,
+          connectionDownlink: true,
           city: true,
           region: true,
           country: true,
@@ -360,6 +371,51 @@ export async function getSessions(filters: SessionFilters & { limit?: number } =
       _count: { select: { replays: true } },
     },
   });
+
+  const sessionIds = sessions.map((s) => s.id);
+  if (sessionIds.length === 0) return sessions.map((s) => ({ ...s, ...emptySessionAggregate() }));
+
+  const [scrollAgg, formStarted, formSubmitted, ctaClicked] = await Promise.all([
+    prisma.scrollEvent.groupBy({
+      by: ["sessionId"],
+      where: { sessionId: { in: sessionIds } },
+      _max: { depth: true },
+      _avg: { depth: true },
+    }),
+    prisma.formEvent.groupBy({
+      by: ["sessionId"],
+      where: { sessionId: { in: sessionIds }, action: "started" },
+      _count: { action: true },
+    }),
+    prisma.formEvent.groupBy({
+      by: ["sessionId"],
+      where: { sessionId: { in: sessionIds }, action: "submitted" },
+      _count: { action: true },
+    }),
+    prisma.ctaEvent.groupBy({
+      by: ["sessionId"],
+      where: { sessionId: { in: sessionIds }, action: "clicked" },
+      _count: { action: true },
+    }),
+  ]);
+
+  const scrollMap = new Map(scrollAgg.map((r) => [r.sessionId, r]));
+  const startedMap = new Map(formStarted.map((r) => [r.sessionId, r._count.action]));
+  const submittedMap = new Map(formSubmitted.map((r) => [r.sessionId, r._count.action]));
+  const ctaMap = new Map(ctaClicked.map((r) => [r.sessionId, r._count.action]));
+
+  return sessions.map((s) => ({
+    ...s,
+    maxScrollPct: scrollMap.get(s.id)?._max.depth ?? 0,
+    avgScrollPct: Math.round(scrollMap.get(s.id)?._avg.depth ?? 0),
+    formStartedCount: startedMap.get(s.id) ?? 0,
+    formSubmittedCount: submittedMap.get(s.id) ?? 0,
+    ctaClickedCount: ctaMap.get(s.id) ?? 0,
+  }));
+}
+
+function emptySessionAggregate() {
+  return { maxScrollPct: 0, avgScrollPct: 0, formStartedCount: 0, formSubmittedCount: 0, ctaClickedCount: 0 };
 }
 
 export async function getSessionReplayMeta(sessionId: string) {
@@ -480,16 +536,18 @@ export async function getFunnelStats(days = 30, source: "all" | "meta" = "all") 
   if (sessionIds.length === 0) {
     return {
       stages: [
-        { key: "sessions", label: "Sessions", count: 0 },
+        { key: "adClicks", label: "Ad clicks", count: 0 },
+        { key: "pageViews", label: "Page views", count: 0 },
         { key: "scrolled", label: "Scrolled 25%+", count: 0 },
-        { key: "ctaClick", label: "CTA Click", count: 0 },
-        { key: "formStart", label: "Form Started", count: 0 },
-        { key: "leadSubmit", label: "Lead Submitted", count: 0 },
+        { key: "ctaClick", label: "CTA click", count: 0 },
+        { key: "formStart", label: "Form start", count: 0 },
+        { key: "leadSubmit", label: "Lead submit", count: 0 },
       ],
     };
   }
 
-  const [scrolled, ctaClick, formStart, leadSubmit] = await Promise.all([
+  const [pageViews, scrolled, ctaClick, formStart, leadSubmit] = await Promise.all([
+    prisma.pageView.count({ where: { sessionId: { in: sessionIds } } }),
     prisma.scrollEvent.groupBy({ by: ["sessionId"], where: { sessionId: { in: sessionIds }, depth: { gte: 25 } } }),
     prisma.ctaEvent.groupBy({ by: ["sessionId"], where: { sessionId: { in: sessionIds }, action: "clicked" } }),
     prisma.formEvent.groupBy({ by: ["sessionId"], where: { sessionId: { in: sessionIds }, action: "started" } }),
@@ -497,11 +555,12 @@ export async function getFunnelStats(days = 30, source: "all" | "meta" = "all") 
   ]);
 
   const stages = [
-    { key: "sessions", label: "Sessions", count: sessionIds.length },
+    { key: "adClicks", label: "Ad clicks", count: sessionIds.length },
+    { key: "pageViews", label: "Page views", count: pageViews },
     { key: "scrolled", label: "Scrolled 25%+", count: scrolled.length },
-    { key: "ctaClick", label: "CTA Click", count: ctaClick.length },
-    { key: "formStart", label: "Form Started", count: formStart.length },
-    { key: "leadSubmit", label: "Lead Submitted", count: leadSubmit.length },
+    { key: "ctaClick", label: "CTA click", count: ctaClick.length },
+    { key: "formStart", label: "Form start", count: formStart.length },
+    { key: "leadSubmit", label: "Lead submit", count: leadSubmit.length },
   ];
 
   return { stages };
@@ -623,27 +682,44 @@ export async function getTechStackStats(days = 30) {
       }),
     ]);
 
-  const perf = await prisma.performanceMetric.findMany({
-    where: { createdAt: { gte: since }, metric: "LCP" },
-    select: { rating: true, session: { select: { visitor: { select: { browser: true, os: true } } } } },
-  });
+  const [cohortSessions, cohortLeads] = await Promise.all([
+    prisma.session.findMany({
+      where: { startedAt: { gte: since } },
+      select: { isBounce: true, visitor: { select: { browser: true, os: true } } },
+    }),
+    prisma.lead.findMany({
+      where: { createdAt: { gte: since } },
+      select: { visitor: { select: { browser: true, os: true } } },
+    }),
+  ]);
 
-  function perfBy(key: "browser" | "os") {
-    const map = new Map<string, { label: string; good: number; total: number }>();
-    for (const row of perf) {
-      const label = row.session.visitor[key];
+  function cohortBy(key: "browser" | "os") {
+    const map = new Map<string, { label: string; sessions: number; bounced: number; leads: number }>();
+    for (const s of cohortSessions) {
+      const label = s.visitor[key];
       if (!label) continue;
-      const entry = map.get(label) ?? { label, good: 0, total: 0 };
-      entry.total += 1;
-      if (row.rating === "good") entry.good += 1;
+      const entry = map.get(label) ?? { label, sessions: 0, bounced: 0, leads: 0 };
+      entry.sessions += 1;
+      if (s.isBounce) entry.bounced += 1;
       map.set(label, entry);
     }
+    for (const l of cohortLeads) {
+      const label = l.visitor?.[key];
+      if (!label) continue;
+      const entry = map.get(label);
+      if (entry) entry.leads += 1;
+    }
     return Array.from(map.values())
-      .map((e) => ({ ...e, goodPct: Math.round((e.good / e.total) * 100) }))
-      .sort((a, b) => b.total - a.total);
+      .map((e) => ({
+        ...e,
+        bouncePct: e.sessions > 0 ? Math.round((e.bounced / e.sessions) * 1000) / 10 : 0,
+        conversionPct: e.sessions > 0 ? Math.round((e.leads / e.sessions) * 1000) / 10 : 0,
+      }))
+      .sort((a, b) => b.sessions - a.sessions);
   }
 
   return {
+    totalSessions: cohortSessions.length,
     devices: toSlices(deviceRows.map((r) => ({ label: r.deviceType, count: r._count.deviceType }))),
     browsers: toSlices(browserRows.map((r) => ({ label: r.browser, count: r._count.browser }))),
     os: toSlices(osRows.map((r) => ({ label: r.os, count: r._count.os }))),
@@ -673,58 +749,9 @@ export async function getTechStackStats(days = 30) {
     ),
     languages: toSlices(languageRows.map((r) => ({ label: r.language, count: r._count.language }))),
     connections: toSlices(connectionRows.map((r) => ({ label: r.connectionType, count: r._count.connectionType }))),
-    perfByBrowser: perfBy("browser"),
-    perfByOs: perfBy("os"),
+    cohortByBrowser: cohortBy("browser"),
+    cohortByOs: cohortBy("os"),
   };
-}
-
-export async function getMetaCapiStats(days = 30) {
-  const since = daysAgo(days);
-
-  const [totalLeads, sent, failed, deliveryLog] = await Promise.all([
-    prisma.lead.count({ where: { createdAt: { gte: since } } }),
-    prisma.lead.count({ where: { createdAt: { gte: since }, metaCapiSentAt: { not: null } } }),
-    prisma.lead.count({ where: { createdAt: { gte: since }, metaCapiError: { not: null }, metaCapiSentAt: null } }),
-    prisma.lead.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 25,
-      select: {
-        id: true,
-        fullName: true,
-        createdAt: true,
-        metaCapiSentAt: true,
-        metaCapiError: true,
-      },
-    }),
-  ]);
-
-  return { totalLeads, sent, failed, deliveryLog };
-}
-
-export async function getLatestLeadForCapiPreview() {
-  return prisma.lead.findFirst({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      createdAt: true,
-      fullName: true,
-      email: true,
-      mobileNumber: true,
-      source: true,
-      session: {
-        select: {
-          startedAt: true,
-          fbclid: true,
-          fbc: true,
-          fbp: true,
-          ipAddress: true,
-          userAgent: true,
-          entryPath: true,
-        },
-      },
-      visitor: { select: { city: true, region: true, country: true } },
-    },
-  });
 }
 
 export async function getErrors(limit = 100) {

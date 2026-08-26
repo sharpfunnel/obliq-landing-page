@@ -9,24 +9,53 @@ export default function HeatmapOverlay({
   path: string;
   points: Array<{ xPct: number; yPct: number }>;
 }) {
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState({ width: 0, height: 700 });
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  // Sized to the iframe's actual document height so there's no scroll context inside the
+  // iframe — the whole thing scrolls as part of the normal page flow, keeping the dot
+  // overlay (positioned in the parent document) aligned with the content underneath it.
+  const [height, setHeight] = useState(800);
 
   useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) setSize((prev) => ({ ...prev, width: entry.contentRect.width }));
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    let observer: ResizeObserver | null = null;
+
+    function measure(doc: Document) {
+      const h = Math.max(doc.documentElement.scrollHeight, doc.body?.scrollHeight ?? 0);
+      if (h > 0) setHeight(h);
+    }
+
+    function onLoad() {
+      try {
+        const doc = iframe!.contentDocument;
+        if (!doc?.documentElement) return;
+        measure(doc);
+        observer = new ResizeObserver(() => measure(doc));
+        observer.observe(doc.documentElement);
+      } catch {
+        // Cross-origin — nothing we can measure, keep the fallback height.
+      }
+    }
+
+    iframe.addEventListener("load", onLoad);
+    return () => {
+      iframe.removeEventListener("load", onLoad);
+      observer?.disconnect();
+    };
+  }, [path]);
 
   return (
-    <div ref={wrapperRef} className="relative w-full overflow-hidden rounded-xl border border-navy-200 bg-white">
-      <iframe src={path} title="Heatmap target page" className="block w-full" style={{ height: size.height }} />
-      <div className="pointer-events-none absolute inset-0">
+    <div className="relative w-full overflow-hidden rounded-xl border border-navy-200 bg-white">
+      <iframe
+        ref={iframeRef}
+        src={path}
+        title="Heatmap target page"
+        scrolling="no"
+        className="block w-full"
+        style={{ height }}
+      />
+      <div className="pointer-events-none absolute inset-0" style={{ height }}>
         {points.map((p, i) => (
           <span
             key={i}

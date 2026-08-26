@@ -1,5 +1,6 @@
 import { verifyAdminSession } from "@/lib/auth/dal";
 import AdminNav from "@/components/admin/AdminNav";
+import AssistantWidget from "@/components/admin/AssistantWidget";
 
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   await verifyAdminSession();
@@ -8,6 +9,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
     <div className="min-h-screen bg-navy-50">
       <AdminNav />
       <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">{children}</main>
+      <AssistantWidget />
     </div>
   );
 }

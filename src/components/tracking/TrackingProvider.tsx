@@ -9,6 +9,8 @@ import {
   trackError,
   trackGenericEvent,
   trackMouse,
+  trackMouseClickCount,
+  trackMouseMoveCount,
   trackPageView,
   trackPerf,
   trackScroll,
@@ -126,6 +128,8 @@ export default function TrackingProvider() {
       const target = event.target as Element | null;
       const now = Date.now();
 
+      trackMouseClickCount();
+
       recentClicks.current.push({ t: now, x: event.clientX, y: event.clientY });
       recentClicks.current = recentClicks.current.filter((c) => now - c.t < RAGE_CLICK_WINDOW_MS);
       const clustered = recentClicks.current.filter(
@@ -174,11 +178,21 @@ export default function TrackingProvider() {
       });
     }
 
+    let lastMoveAt = 0;
+    function onMouseMove() {
+      const now = Date.now();
+      if (now - lastMoveAt < 150) return; // sample movement, don't count every pixel
+      lastMoveAt = now;
+      trackMouseMoveCount();
+    }
+
     document.addEventListener("click", onClick, true);
     document.addEventListener("dblclick", onDblClick, true);
+    document.addEventListener("mousemove", onMouseMove, { passive: true });
     return () => {
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("dblclick", onDblClick, true);
+      document.removeEventListener("mousemove", onMouseMove);
     };
   }, [isAdmin]);
 
@@ -209,17 +223,25 @@ export default function TrackingProvider() {
     };
   }, [isAdmin]);
 
-  // Heatmap click/hover coordinate capture (normalized to viewport %)
+  // Heatmap click/hover coordinate capture — normalized against the FULL page
+  // (scrollWidth/scrollHeight), not just the current viewport. A click's position on the
+  // page doesn't change as the visitor scrolls, so the stored % must be scroll-independent —
+  // otherwise the same physical spot on the page gets a different xPct/yPct depending on how
+  // far down the visitor had scrolled when they clicked.
   useEffect(() => {
     if (isAdmin) return;
 
     function onClick(event: MouseEvent) {
+      const doc = document.documentElement;
+      const pageWidth = doc.scrollWidth || window.innerWidth;
+      const pageHeight = doc.scrollHeight || window.innerHeight;
+
       trackGenericEvent({
         name: "heatmap_click",
         metadata: {
           path: location.pathname,
-          xPct: (event.clientX / window.innerWidth) * 100,
-          yPct: (event.clientY / window.innerHeight) * 100,
+          xPct: ((window.scrollX + event.clientX) / pageWidth) * 100,
+          yPct: ((window.scrollY + event.clientY) / pageHeight) * 100,
           viewportWidth: window.innerWidth,
         },
       });

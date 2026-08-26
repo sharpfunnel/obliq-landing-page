@@ -102,4 +102,6 @@ export type TrackBatchPayload = {
   events?: GenericEventPayload[];
   exitPath?: string;
   isFinal?: boolean;
+  mouseClicks?: number;
+  mouseMoves?: number;
 };

@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { CheckCircle2, XCircle } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import { Table, Thead, Th, Tr, Td, EmptyState } from "@/components/admin/Table";
 import LeadStatusSelect from "@/components/admin/LeadStatusSelect";
-import ResendCapiButton from "@/components/admin/ResendCapiButton";
 import { getLeadFilterOptions, getLeads } from "@/lib/admin/queries";
 import { LEAD_STATUSES } from "@/lib/admin/constants";
 import { countryName } from "@/lib/geo/country-coords";
@@ -105,7 +103,6 @@ export default async function AdminLeadsPage({
             <Th>Location</Th>
             <Th>Source / UTM</Th>
             <Th>Status</Th>
-            <Th>Meta CAPI</Th>
           </tr>
         </Thead>
         <tbody>
@@ -163,22 +160,6 @@ export default async function AdminLeadsPage({
               </Td>
               <Td>
                 <LeadStatusSelect leadId={lead.id} status={lead.status} />
-              </Td>
-              <Td>
-                <div className="flex items-center gap-2">
-                  {lead.metaCapiSentAt ? (
-                    <span className="flex items-center gap-1 text-xs font-medium text-green-600" title={lead.metaCapiSentAt.toString()}>
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Sent
-                    </span>
-                  ) : lead.metaCapiError ? (
-                    <span className="flex items-center gap-1 text-xs font-medium text-red-600" title={lead.metaCapiError}>
-                      <XCircle className="h-3.5 w-3.5" /> Failed
-                    </span>
-                  ) : (
-                    <span className="text-xs text-navy-400">—</span>
-                  )}
-                  <ResendCapiButton leadId={lead.id} />
-                </div>
               </Td>
             </Tr>
           ))}

@@ -73,6 +73,8 @@ model Session {
   userAgent      String?
   viewportWidth  Int?
   viewportHeight Int?
+  mouseClickCount Int @default(0)
+  mouseMoveCount  Int @default(0)
 
   pageViews     PageView[]
   events        Event[]
@@ -255,9 +257,6 @@ model Lead {
   message       String?
   source        String? // e.g. "hero-form", "mid-cta"
   status        String   @default("new") // new | contacted | qualified | won | lost (app-enforced)
-
-  metaCapiSentAt DateTime?
-  metaCapiError  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

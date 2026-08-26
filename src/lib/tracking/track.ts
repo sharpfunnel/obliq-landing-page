@@ -47,6 +47,8 @@ type Queue = {
   errors: ErrorEventPayload[];
   mouseEvents: MouseEventPayload[];
   events: GenericEventPayload[];
+  mouseClicks: number;
+  mouseMoves: number;
 };
 
 function emptyQueue(): Queue {
@@ -59,6 +61,8 @@ function emptyQueue(): Queue {
     errors: [],
     mouseEvents: [],
     events: [],
+    mouseClicks: 0,
+    mouseMoves: 0,
   };
 }
 
@@ -67,7 +71,10 @@ let flushTimer: ReturnType<typeof setInterval> | null = null;
 let exitPath: string | undefined;
 
 function isQueueEmpty(q: Queue) {
-  return Object.values(q).every((arr) => arr.length === 0);
+  const arraysEmpty = [q.pageViews, q.scrollEvents, q.ctaEvents, q.formEvents, q.perfMetrics, q.errors, q.mouseEvents, q.events].every(
+    (arr) => arr.length === 0
+  );
+  return arraysEmpty && q.mouseClicks === 0 && q.mouseMoves === 0;
 }
 
 function send(body: TrackBatchPayload, useBeacon: boolean) {
@@ -133,6 +140,16 @@ export function trackPerf(payload: PerfEventPayload) {
 
 export function trackMouse(payload: MouseEventPayload) {
   queue.mouseEvents.push(payload);
+}
+
+/** Increments this session's raw click counter (distinct from the rage/dead/double-click
+ *  anomaly detection in trackMouse) — a plain activity count shown in the Sessions table. */
+export function trackMouseClickCount() {
+  queue.mouseClicks += 1;
+}
+
+export function trackMouseMoveCount() {
+  queue.mouseMoves += 1;
 }
 
 export function trackGenericEvent(payload: GenericEventPayload) {

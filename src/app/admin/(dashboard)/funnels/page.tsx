@@ -16,23 +16,27 @@ export default async function AdminFunnelsPage({
 
   return (
     <div>
-      <PageHeader title="Funnels" description="Ad click → page view → scroll → CTA → form → lead, last 30 days." />
+      <PageHeader
+        title="Funnels"
+        description="Last 30 days · ad click → page view → scroll → CTA → form start → lead."
+        actions={
+          <div className="flex gap-1 rounded-full bg-white p-1 ring-1 ring-navy-200">
+            {(["all", "meta"] as const).map((s) => (
+              <Link
+                key={s}
+                href={`/admin/funnels?source=${s}`}
+                className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
+                  source === s ? "bg-navy-900 text-white" : "text-navy-500 hover:text-navy-900"
+                }`}
+              >
+                {s === "all" ? "All traffic" : "Meta ads only"}
+              </Link>
+            ))}
+          </div>
+        }
+      />
 
-      <div className="mb-4 flex gap-1 rounded-full bg-white p-1 ring-1 ring-navy-200" style={{ width: "fit-content" }}>
-        {(["all", "meta"] as const).map((s) => (
-          <Link
-            key={s}
-            href={`/admin/funnels?source=${s}`}
-            className={`rounded-full px-4 py-1.5 text-xs font-medium capitalize transition ${
-              source === s ? "bg-navy-900 text-white" : "text-navy-500 hover:text-navy-900"
-            }`}
-          >
-            {s === "all" ? "All Traffic" : "Meta Ads Only"}
-          </Link>
-        ))}
-      </div>
-
-      <div className="max-w-2xl rounded-xl border border-navy-200 bg-white p-6">
+      <div className="rounded-xl border border-navy-200 bg-white p-6">
         <ConversionFunnel stages={funnel.stages} />
       </div>
     </div>

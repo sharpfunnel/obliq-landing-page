@@ -3,9 +3,6 @@ import "server-only";
 import { prisma } from "@/lib/db";
 
 export const SETTING_KEYS = {
-  metaPixelId: "meta_pixel_id",
-  metaCapiAccessToken: "meta_capi_access_token",
-  metaCapiTestEventCode: "meta_capi_test_event_code",
   telegramBotToken: "telegram_bot_token",
   telegramChatId: "telegram_chat_id",
 } as const;
