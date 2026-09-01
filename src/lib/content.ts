@@ -2,21 +2,21 @@ export const SITE = {
   projectName: "Codename Obliq",
   developer: "Today Group",
   coDeveloper: "Jindal Group",
-  tagline: "A New Commercial Address on Airoli-Mulund Link Road",
-  location: "Airoli, Navi Mumbai",
+  tagline: "A New Commercial Address on Juinagar-Mulund Link Road",
+  location: "Juinagar, Navi Mumbai",
   contactName: "Sohail Siddiqui",
   contactPhone: "+919892587749",
   contactPhoneDisplay: "+91 98925 87749",
   reraNote: "CC Received",
   mapEmbedSrc:
-    "https://www.google.com/maps?q=Today+Group+Airoli&ll=19.1489313,73.0010265&z=17&output=embed",
+    "https://www.google.com/maps?q=Today+Group+Juinagar&ll=19.1489313,73.0010265&z=17&output=embed",
   mapLink:
-    "https://www.google.com/maps/place/Today+Group+Airoli/@19.1489296,73.0010223,767m/data=!3m1!1e3!4m6!3m5!1s0x3be7bf005f93f7c5:0xbdefccf711dbc8a6!8m2!3d19.1489313!4d73.0010265!16s%2Fg%2F11yk1q6c3s",
+    "https://www.google.com/maps/place/Today+Group+Juinagar/@19.1489296,73.0010223,767m/data=!3m1!1e3!4m6!3m5!1s0x3be7bf005f93f7c5:0xbdefccf711dbc8a6!8m2!3d19.1489313!4d73.0010265!16s%2Fg%2F11yk1q6c3s",
 };
 
 export const HIGHLIGHTS = [
-  { title: "Prime Frontage", detail: "On Thane-Belapur Road & Airoli-Mulund Link Road" },
-  { title: "4 Mins from Station", detail: "Quick drive from Airoli Railway Station" },
+  { title: "Prime Frontage", detail: "On Thane-Belapur Road & Juinagar-Mulund Link Road" },
+  { title: "4 Mins from Station", detail: "Quick drive from Juinagar Railway Station" },
   { title: "CC Received", detail: "Construction is live — ready to start" },
   { title: "Flexible Payment", detail: "CLP & Special Down Payment plans available" },
 ];
@@ -43,7 +43,7 @@ export const PAYMENT_PLANS = [
 export const WHY_COMMERCIAL = [
   {
     title: "Unmatched Connectivity",
-    detail: "Direct access from Thane-Belapur Road and the Airoli-Mulund Link Road puts you minutes from the Eastern Express Highway, Airoli station, and the entire Navi Mumbai business belt.",
+    detail: "Direct access from Thane-Belapur Road and the Juinagar-Mulund Link Road puts you minutes from the Eastern Express Highway, Juinagar station, and the entire Navi Mumbai business belt.",
   },
   {
     title: "Built for Business",
@@ -51,7 +51,7 @@ export const WHY_COMMERCIAL = [
   },
   {
     title: "High ROI Potential",
-    detail: "Airoli's commercial corridor is one of Navi Mumbai's fastest-growing business hubs — early entry pricing means stronger upside.",
+    detail: "Juinagar's commercial corridor is one of Navi Mumbai's fastest-growing business hubs — early entry pricing means stronger upside.",
   },
 ];
 
@@ -96,8 +96,8 @@ export const FAQS = [
     a: "You can choose the Construction Linked Plan (25:70) at ₹9,500 PSF, or the Special Down Payment offer at ₹6,500 PSF for maximum savings.",
   },
   {
-    q: "How far is the project from Airoli station?",
-    a: "The project is approximately a 4-minute drive from Airoli Railway Station, with direct frontage on Thane-Belapur Road and the Airoli-Mulund Link Road.",
+    q: "How far is the project from Juinagar station?",
+    a: "The project is approximately a 4-minute drive from Juinagar Railway Station, with direct frontage on Thane-Belapur Road and the Juinagar-Mulund Link Road.",
   },
   {
     q: "Who is developing this project?",

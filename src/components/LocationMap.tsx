@@ -3,9 +3,9 @@ import { SITE } from "@/lib/content";
 import CtaLink from "./CtaLink";
 
 const NEARBY = [
-  "Airoli Railway Station — 4 mins",
+  "Juinagar Railway Station — 4 mins",
   "Thane-Belapur Road — direct frontage",
-  "Airoli-Mulund Link Road — direct frontage",
+  "Juinagar-Mulund Link Road — direct frontage",
   "Eastern Express Highway — quick access",
 ];
 
@@ -16,7 +16,7 @@ export default function LocationMap() {
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-extrabold text-navy-900 sm:text-4xl">Location Advantage</h2>
           <p className="mt-3 text-navy-600">
-            Strategically positioned in the heart of Airoli&apos;s commercial belt.
+            Strategically positioned in the heart of Juinagar&apos;s commercial belt.
           </p>
         </div>
 

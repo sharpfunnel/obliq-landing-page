@@ -21,7 +21,7 @@ export default function Hero() {
       <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:py-24 lg:px-8">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-gold-400/30 bg-gold-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-gold-300">
-            New Commercial Launch · Airoli
+            New Commercial Launch · Juinagar
           </span>
 
           <h1 className="mt-5 text-4xl font-extrabold leading-tight text-white sm:text-5xl">
@@ -37,14 +37,14 @@ export default function Hero() {
 
           <p className="mt-5 max-w-xl text-base text-navy-300 sm:text-lg">
             A landmark commercial development by {SITE.developer} &amp; {SITE.coDeveloper} on the
-            Airoli-Mulund Link Road — corporate offices, professional suites and retail spaces
+            Juinagar-Mulund Link Road — corporate offices, professional suites and retail spaces
             engineered for growth.
           </p>
 
           <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {[
-              "Direct access — Airoli-Mulund Link Road",
-              "4 mins drive from Airoli Station",
+              "Direct access — Juinagar-Mulund Link Road",
+              "4 mins drive from Juinagar Station",
               "CC Received — construction is live",
               "Flexible 25:70 payment plan",
             ].map((item) => (
