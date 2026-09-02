@@ -21,7 +21,7 @@ const jobs = [
   { src: "temp/Creatives/Office Spaces4.jpg", out: "public/images/office-4.webp", width: 1200 },
   { src: "temp/Creatives/Office Spaces5.jpg", out: "public/images/office-5.webp", width: 1200 },
   { src: "temp/Creatives/Office Space 70_30.jpeg", out: "public/images/payment-plan.webp", width: 1200 },
-  { src: "temp/Creatives/Codename Obliq RERA received.jpeg", out: "public/images/rera-received.webp", width: 1200 },
+  { src: "temp/Creatives/Codename Tangent RERA received.jpeg", out: "public/images/rera-received.webp", width: 1200 },
 ];
 
 for (const job of jobs) {

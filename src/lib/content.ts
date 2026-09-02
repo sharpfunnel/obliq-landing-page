@@ -1,5 +1,5 @@
 export const SITE = {
-  projectName: "Codename Obliq",
+  projectName: "Codename Tangent",
   developer: "Today Group",
   coDeveloper: "Jindal Group",
   tagline: "A New Commercial Address on Juinagar-Mulund Link Road",

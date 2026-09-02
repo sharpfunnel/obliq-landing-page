@@ -19,7 +19,7 @@ export default async function ThankYouPage({
     <main className="relative min-h-screen overflow-hidden bg-navy-950">
       <Image
         src="/images/road-entrance.webp"
-        alt="Codename Obliq commercial project"
+        alt="Codename Tangent commercial project"
         fill
         priority
         className="object-cover opacity-25"

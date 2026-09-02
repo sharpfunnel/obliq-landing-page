@@ -10,7 +10,7 @@ export default function MidCTA() {
           </h2>
           <p className="mt-3 text-navy-900/80">
             Share your details and our team will get in touch with pricing, floor plans and
-            availability for {`Codename Obliq`}.
+            availability for {`Codename Tangent`}.
           </p>
         </div>
 

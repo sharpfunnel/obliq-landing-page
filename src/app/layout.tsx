@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Codename Obliq | Commercial Spaces in Juinagar by Today Group & Jindal Group",
+  title: "Codename Tangent | Commercial Spaces in Juinagar by Today Group & Jindal Group",
   description:
     "New commercial launch on Juinagar-Mulund Link Road. Corporate offices, professional suites & retail spaces by Today Group & Jindal Group. CC Received. Book a free site visit today.",
 };

@@ -10,7 +10,7 @@ export default function Hero() {
     <section className="relative isolate overflow-hidden bg-navy-950">
       <Image
         src="/images/hero-grand-entrance.webp"
-        alt="Codename Obliq commercial project grand entrance"
+        alt="Codename Tangent commercial project grand entrance"
         fill
         priority
         className="object-cover opacity-50"

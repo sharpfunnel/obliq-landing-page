@@ -1,6 +1,6 @@
-# Codename Obliq — Landing Page
+# Codename Tangent — Landing Page
 
-Lead-generation landing page for Codename Obliq, a commercial project by Today Group & Jindal Group in Juinagar, Navi Mumbai. Built with Next.js (App Router), Tailwind CSS, and Prisma + PostgreSQL (Neon).
+Lead-generation landing page for Codename Tangent, a commercial project by Today Group & Jindal Group in Juinagar, Navi Mumbai. Built with Next.js (App Router), Tailwind CSS, and Prisma + PostgreSQL (Neon).
 
 ## Getting Started
 

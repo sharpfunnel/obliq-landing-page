@@ -8,7 +8,7 @@ export default function Gallery() {
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-extrabold text-white sm:text-4xl">Project Renders &amp; Spaces</h2>
           <p className="mt-3 text-navy-400">
-            A glimpse of the elevation, entrances and office spaces at {`Codename Obliq`}.
+            A glimpse of the elevation, entrances and office spaces at {`Codename Tangent`}.
           </p>
         </div>
 
